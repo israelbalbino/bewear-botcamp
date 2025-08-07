@@ -4,9 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { FormControl,Form, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { authClient } from '@/lib/auth-client';
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useRouter } from 'next/navigation';
 import { useForm } from "react-hook-form";
+import { toast } from 'sonner';
 import z from "zod";
 
 const formSchema = z.object({
@@ -24,6 +27,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>
 
 const Singupform = () => {
+    const router = useRouter();
 
     const form = useForm<FormValues>({
 
@@ -38,9 +42,36 @@ const Singupform = () => {
     })
 
 
-    function onSubmit(values: FormValues){
+    async function  onSubmit(values: FormValues){
         console.log("FORMULARIO VALIDO E ENVIADO")
-        console.log(values)
+        
+  
+            const { data, error } = await authClient.signUp.email({
+                email:values.email, // user email address
+                password:values.password, // user password -> min 8 characters by default
+                name:values.name, // user display name
+                fetchOptions:{
+                    onSuccess:()=>{
+                        router.push('/')
+                    },
+                    onError: (error) => {
+                        if(error.error.code === "USER_ALREADY_EXISTS"){
+                            toast.error("Esse email já existe!")
+                            form.setError("email",{
+                                message: "E-mail já cadastrado."
+                            })
+                        }
+                        toast.error(error.error.message);
+                        
+                    }
+                }
+        });
+
+       
+
+      
+
+    
        }
 
 
